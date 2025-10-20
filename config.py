@@ -157,3 +157,11 @@ PERMUTATION_IMPORTANCES_CSV = "permutation_importances.csv"
 # Output file paths
 OUT_ALL_GEOJSON = "all_segments_with_predictions.geojson"
 OUT_PRED_GEOJSON = "predicted_sidewalks.geojson"
+
+# ---------------------------------------------------------------------------
+# LABEL LEAKAGE CONTROLS
+# ---------------------------------------------------------------------------
+# To avoid the model trivially learning the label rule, exclude features that
+# directly define the label (distance to pedestrian line) or are used as a
+# positive override (explicit sidewalk tags). Keep them for ablations only.
+EXCLUDE_LABEL_LEAK_FEATURES = True

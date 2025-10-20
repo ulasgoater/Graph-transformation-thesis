@@ -25,6 +25,7 @@ from config import (
     USE_ONLY_LINEAR_PED_FOR_LABEL, PRESERVE_LEGACY_LABEL, DROP_UNKNOWN_LABELS,
     ADAPTIVE_ADD_NEGATIVES, MIN_NEGATIVE_RATIO, MAX_ADAPTIVE_NEG_ADD
 )
+from config import EXCLUDE_LABEL_LEAK_FEATURES
 import warnings
 
 
@@ -131,6 +132,20 @@ def engineer_and_label(gdf_auto, gdf_ped, gdf_amen, gdf_cross,
     
     # Define feature lists
     numeric_feats, categorical_feats = _define_feature_lists(gdf, amen_count_cols)
+
+    # Optionally remove features that leak the label definition
+    dropped_leak_feats = []
+    if EXCLUDE_LABEL_LEAK_FEATURES:
+        leak_numeric = [f for f in ["ped_line_dist_m"] if f in numeric_feats]
+        for f in leak_numeric:
+            numeric_feats.remove(f)
+        dropped_leak_feats.extend(leak_numeric)
+        leak_cats = [c for c in ["sidewalk_tag_any", "sidewalk_tag_left", "sidewalk_tag_right", "sidewalk_tag_both"] if c in categorical_feats]
+        for c in leak_cats:
+            categorical_feats.remove(c)
+        dropped_leak_feats.extend(leak_cats)
+    if dropped_leak_feats:
+        label_meta["dropped_label_leak_features"] = dropped_leak_feats
     
     return gdf, numeric_feats, categorical_feats, label_meta
 

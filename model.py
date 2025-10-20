@@ -39,6 +39,7 @@ from config import (
     ENABLE_BASELINE_LOGREG, PERMUTATION_IMPORTANCE_N_REPEATS, EXPORT_PERMUTATION_IMPORTANCE,
     PERMUTATION_IMPORTANCES_CSV
 )
+from config import EXCLUDE_LABEL_LEAK_FEATURES
 
 
 def train_and_evaluate(gdf, numeric_feats, categorical_feats,
@@ -61,6 +62,14 @@ def train_and_evaluate(gdf, numeric_feats, categorical_feats,
         gdf = gdf.copy()
         gdf["centroid"] = gdf.geometry.centroid
 
+    # Filter out unknown labels if any slipped through
+    if "has_ped" in gdf.columns:
+        mask_known = gdf["has_ped"].isin([0, 1])
+        if (~mask_known).any():
+            warnings.warn(f"Dropping {int((~mask_known).sum())} rows with unknown labels (-1) before training.")
+        gdf = gdf[mask_known].copy()
+
+    # Build X/y
     X = gdf[numeric_feats + categorical_feats].copy()
     y = gdf["has_ped"].astype(int).copy()
 

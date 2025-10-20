@@ -143,6 +143,7 @@ The pipeline generates several output files:
 - Synthetic negative fallback only if refined labeling still produces a single class.
 - Feature importances exported (`feature_importances.csv`).
 - Metrics JSON enriched with labeling strategy metadata for thesis reproducibility.
+- Label leakage control: by default the model excludes features that directly define the label (e.g., `ped_line_dist_m`) and explicit sidewalk tag indicators (`sidewalk_tag_*`). Toggle via `EXCLUDE_LABEL_LEAK_FEATURES` in `config.py` for ablations.
 
 ### Graph Construction
 - Automatic node snapping for network connectivity
@@ -205,6 +206,8 @@ comparative analysis (enabling ablation in the thesis).
 Synthetic negatives are only generated if, after removal (or retention) of
 UNKNOWN, the label set collapses to a single class—ensuring the model can fit.
 
+Training dataset policy: Before modeling, rows with unknown labels (-1) are dropped to ensure a binary label space. The pipeline logs the count dropped.
+
 ## Glossary
 
 | Term | Meaning |
@@ -236,6 +239,14 @@ To strengthen methodological rigor, consider reporting:
 - Legacy vs refined labels (accuracy/F1 deltas).
 - Effect of removing ambiguous band (performance & class balance changes).
 - Feature removal trials (e.g., without amenity diversity) to quantify marginal contribution.
+- Leakage sensitivity: Train with and without `EXCLUDE_LABEL_LEAK_FEATURES` and compare metrics to demonstrate non-trivial learning beyond the rule.
+
+## Known Logical Pitfalls and How Addressed
+
+- Label leakage: Using `ped_line_dist_m` (which defines the label) as a feature can inflate performance. Mitigation: `EXCLUDE_LABEL_LEAK_FEATURES=True` removes it and related explicit sidewalk tag indicators from features by default.
+- Centroid vs. full geometry distance: Distance computed from centroids can misclassify long/diagonal segments. Future work: switch to minimum distance from the polyline to the nearest pedestrian line, not just centroid. Documented as a limitation; current approach keeps compute cost low.
+- Ambiguous band handling: If unknowns are retained, they are excluded from supervised fitting; counts are exported for transparency. For dense pedestrian networks, adaptive negatives can re-balance if needed.
+- Snapping artifacts in graph: Grid-based snapping can merge nodes across diagonals within tolerance. Mitigation: small `SNAP_TOL_M` default and component-length filtering; future work could use spatial clustering (DBSCAN) for more robust snapping.
 
 ## Reproducibility Checklist
 

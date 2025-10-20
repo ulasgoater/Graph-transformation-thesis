@@ -29,6 +29,7 @@ from config import (
     LABEL_SUMMARY_CSV, PRESERVE_LEGACY_LABEL, LABEL_STRATEGY,
     DIST_LABEL_POS_THRESHOLD_M, DIST_LABEL_NEG_THRESHOLD_M
 )
+from config import EXCLUDE_LABEL_LEAK_FEATURES
 import json
 import os
 
@@ -86,6 +87,10 @@ def main(run_test_subset=False, subset_size_m=1000, auto_expand_subset=True, exp
     gdf_feat, numeric_feats, categorical_feats, label_meta = engineer_and_label(
         gdf_auto, gdf_ped, gdf_amen, gdf_cross
     )
+    if EXCLUDE_LABEL_LEAK_FEATURES:
+        dropped = label_meta.get("dropped_label_leak_features", [])
+        if dropped:
+            print(f"Excluded potential label-leak features: {dropped}")
 
     # Export label summary (after distance-based labeling inside feature engineering)
     try:
@@ -117,9 +122,9 @@ def main(run_test_subset=False, subset_size_m=1000, auto_expand_subset=True, exp
     # Train and evaluate model
     print("Training model...")
     # Log class distribution pre-training
-    pos_count = int(gdf_feat["has_ped"].sum()) if "has_ped" in gdf_feat.columns else 0
-    total_count = len(gdf_feat)
-    neg_count = total_count - pos_count
+    pos_count = int((gdf_feat.get("has_ped", 0) == 1).sum())
+    total_count = int(len(gdf_feat))
+    neg_count = int((gdf_feat.get("has_ped", 0) == 0).sum())
     print(f"Label distribution: positives={pos_count} negatives={neg_count} (total={total_count})")
     if pos_count == 0 or neg_count == 0:
         print("WARNING: Only one class present before training after distance labeling.")
