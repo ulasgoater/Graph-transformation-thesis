@@ -183,3 +183,63 @@ See `requirements.txt`:
 - networkx
 - numpy
 - rtree (spatial indexing)
+
+Overpass API queries used:
+
+   - Questo algoritmo ci da tutte le possibili strade pedonali esistenti finora 
+
+[out:json][timeout:25]; 
+
+ ( 
+
+ // Explicit pedestrian-friendly highways way["highway"~"^(footway|pedestrian|steps|path|living_street|residential)$"](44.4768,11.3016,44.5168,11.3616); 
+
+ // Sidewalks 
+
+ way["footway"="sidewalk"](44.4768,11.3016,44.5168,11.3616); way["sidewalk"](44.4768,11.3016,44.5168,11.3616); 
+
+
+ // Shared paths  
+
+way["highway"="path"]["foot"!="no"](44.4768,11.3016,44.5168,11.3616); way["highway"="cycleway"]["foot"~"yes|designated"](44.4768,11.3016,44.5168,11.3616); // Permissive service roads  
+
+way["highway"="service"]["access"~"^(yes|permissive|destination|customers|public)$"](44.4768,11.3016,44.5168,11.3616);  
+
+// Indoor corridors  
+
+way["highway"="corridor"](44.4768,11.3016,44.5168,11.3616); way["indoor"="corridor"](44.4768,11.3016,44.5168,11.3616);  
+
+);  
+out geom; 
+
+
+   - Questo algoritmo ci da tutti i crossings- Attraversamenti di strada 
+
+[out:json][timeout:25]; 
+
+ ( 
+
+ // Crossings mapped as nodes  
+
+node["highway"="crossing"](44.4768,11.3016,44.5168,11.3616); 
+
+ // Crossings mapped as ways (short footway segments)  
+
+way["footway"="crossing"](44.4768,11.3016,44.5168,11.3616); 
+
+ // Traffic signals that act as crossings  
+
+node["highway"="traffic_signals"]["crossing"~"^(yes|zebra|traffic_signals)$"](44.4768,11.3016,44.5168,11.3616);  
+
+); 
+
+ out geom; 
+
+   - Amenities- Questa query e’ importante perche’ ho pensato a una logica dove le strade che circondano queste aree specifice saranno considerate pedonali 
+
+[out:json][timeout:25]; ( // Education node["amenity"~"^(school|university|college|kindergarten)$"](44.4768,11.3016,44.5168,11.3616); way["amenity"~"^(school|university|college|kindergarten)$"](44.4768,11.3016,44.5168,11.3616); relation["amenity"~"^(school|university|college|kindergarten)$"](44.4768,11.3016,44.5168,11.3616); // Health node["amenity"~"^(hospital|clinic|doctors|pharmacy)$"](44.4768,11.3016,44.5168,11.3616); way["amenity"~"^(hospital|clinic|doctors|pharmacy)$"](44.4768,11.3016,44.5168,11.3616); relation["amenity"~"^(hospital|clinic|doctors|pharmacy)$"](44.4768,11.3016,44.5168,11.3616); // Food & drink node["amenity"~"^(cafe|restaurant|bar|fast_food|pub)$"](44.4768,11.3016,44.5168,11.3616); way["amenity"~"^(cafe|restaurant|bar|fast_food|pub)$"](44.4768,11.3016,44.5168,11.3616); relation["amenity"~"^(cafe|restaurant|bar|fast_food|pub)$"](44.4768,11.3016,44.5168,11.3616); // Retail node["shop"](44.4768,11.3016,44.5168,11.3616); way["shop"](44.4768,11.3016,44.5168,11.3616); relation["shop"](44.4768,11.3016,44.5168,11.3616); // Culture & leisure node["tourism"~"^(museum|gallery|attraction)$"](44.4768,11.3016,44.5168,11.3616); way["tourism"~"^(museum|gallery|attraction)$"](44.4768,11.3016,44.5168,11.3616); relation["tourism"~"^(museum|gallery|attraction)$"](44.4768,11.3016,44.5168,11.3616); node["leisure"~"^(park|playground|pitch|sports_centre)$"](44.4768,11.3016,44.5168,11.3616); way["leisure"~"^(park|playground|pitch|sports_centre)$"](44.4768,11.3016,44.5168,11.3616); relation["leisure"~"^(park|playground|pitch|sports_centre)$"](44.4768,11.3016,44.5168,11.3616); ); out center; 
+
+- Tutte le strade tranne pedonali(auto), provero’ di transformare  su questa data 
+
+[out:json][timeout:25]; ( way["highway"]["highway"!~"^(footway|path|steps|pedestrian|cycleway|corridor)$"](44.4768,11.3016,44.5168,11.3616); ); out geom; 
+

@@ -1,28 +1,86 @@
 # run_pipeline.py
 from config import *
-from io_utils import load_autograph_csv, load_point_csv
+from data_fetcher import (
+    fetch_autograph_data,
+    fetch_crossings_data,
+    fetch_amenities_data,
+    fetch_pedestrian_data,
+)
 from classify import classify_autograph
 from sidewalks import make_sidewalks
 from crossings import insert_crossings
 from graph import build_graph, export_graph
-import geopandas as gpd
 
-def main(run_test_subset=True):
-    print("Loading autograph...")
-    gdf_auto = load_autograph_csv(AUTOGRAPH_CSV)
-    print("Autograph segments:", len(gdf_auto))
+
+def get_bbox_from_user():
+    """Prompt user for bounding box coordinates."""
+    print("\nEnter bounding box coordinates for the area:")
+    print("Format: south, west, north, east (latitude and longitude in decimal degrees)")
+    print("Example for Milano: 45.386, 9.040, 45.535, 9.278")
+    
+    while True:
+        try:
+            coords_input = input("\nCoordinates: ").strip()
+            coords = [float(x.strip()) for x in coords_input.split(",")]
+            
+            if len(coords) != 4:
+                print("Error: Please enter exactly 4 values (south, west, north, east)")
+                continue
+            
+            south, west, north, east = coords
+            
+            if not (-90 <= south < north <= 90):
+                print("Error: Invalid latitude values. South must be < North, both between -90 and 90")
+                continue
+            
+            if not (-180 <= west < east <= 180):
+                print("Error: Invalid longitude values. West must be < East, both between -180 and 180")
+                continue
+            
+            return coords
+        except ValueError:
+            print("Error: Please enter valid numeric coordinates")
+        except KeyboardInterrupt:
+            print("\nCancelled by user")
+            exit(0)
+
+
+def main(run_test_subset=True, bbox=None, prompt_bbox=False):
+    """Run the pedestrian graph pipeline using Overpass API.
+    
+    Args:
+        run_test_subset: If True, extract only a 1km x 1km test area
+        bbox: Custom bounding box [south, west, north, east], uses Milano default if None
+        prompt_bbox: If True, interactively prompt user for coordinates
+    """
+    if prompt_bbox:
+        bbox = get_bbox_from_user()
+    
+    if bbox:
+        print(f"Fetching data from Overpass API for bbox: {bbox} …")
+    else:
+        print("Fetching data from Overpass API (default Milano bbox) …")
+    
+    gdf_auto = fetch_autograph_data(bbox)
+    gdf_cross = fetch_crossings_data(bbox)
+    gdf_amenities = fetch_amenities_data(bbox)
+    gdf_pedestrian = fetch_pedestrian_data(bbox)
+    
+    # Export raw Overpass query results
+    print("\nExporting raw Overpass query results...")
+    OUT_DIR.mkdir(exist_ok=True)
+    gdf_auto.to_file(OUT_DIR / "autograph_raw.geojson", driver="GeoJSON")
+    gdf_cross.to_file(OUT_DIR / "crossings_raw.geojson", driver="GeoJSON")
+    gdf_amenities.to_file(OUT_DIR / "amenities_raw.geojson", driver="GeoJSON")
+    gdf_pedestrian.to_file(OUT_DIR / "pedestrian_raw.geojson", driver="GeoJSON")
+    print(f"Raw data exported to: {OUT_DIR}")
+
+    print("\nAutograph segments:", len(gdf_auto))
+    print("Crossings loaded:", len(gdf_cross))
 
     # optional: load park polygons if you have them (not provided in your CSVs)
     gdf_parks = None
 
-    # load crossings points
-    try:
-        gdf_cross = load_point_csv(CROSSINGS_CSV)
-        print("Crossings loaded:", len(gdf_cross))
-    except Exception as e:
-        print("Crossings load failed or missing:", e)
-        gdf_cross = gpd.GeoDataFrame(columns=["geometry"], geometry="geometry", crs=gdf_auto.crs)
-    
     if gdf_cross.empty:
         print("WARNING: No crossing points provided. Graph will have no crossing connectors.")
         print("         Pedestrian graph may be disconnected between road sides.")
@@ -67,4 +125,4 @@ def main(run_test_subset=True):
     print("Done.")
 
 if __name__ == "__main__":
-    main(run_test_subset=True)
+    main(run_test_subset=False, prompt_bbox=True)

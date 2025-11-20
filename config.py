@@ -1,11 +1,45 @@
 # config.py
 from pathlib import Path
 
-# Input CSVs (adjust paths if needed)
-AUTOGRAPH_CSV = Path("autograph.csv")
-PEDESTRIAN_CSV = Path("pedestrian.csv")   # for validation/optional
-AMENITIES_CSV = Path("amenities.csv")     # optional
-CROSSINGS_CSV = Path("crossings.csv")
+# OVERPASS API configuration (Milano bounding box: south, west, north, east)
+MILANO_BBOX = [45.386, 9.040, 45.535, 9.278]
+
+OVERPASS_QUERIES = {
+		"autograph": """
+(
+	way["highway"]["highway"!~"^(footway|path|steps|pedestrian|cycleway|corridor)$"]({bbox});
+)
+""".strip(),
+		"crossings": """
+(
+	node["highway"="crossing"]({bbox});
+	way["footway"="crossing"]({bbox});
+	node["highway"="traffic_signals"]["crossing"~"^(yes|zebra|traffic_signals)$"]({bbox});
+)
+""".strip(),
+		"pedestrian": """
+(
+	way["highway"~"^(footway|pedestrian|steps|path|living_street|residential)$"]({bbox});
+	way["footway"="sidewalk"]({bbox});
+	way["sidewalk"]({bbox});
+	way["highway"="path"]["foot"!="no"]({bbox});
+	way["highway"="cycleway"]["foot"~"yes|designated"]({bbox});
+	way["highway"="service"]["access"~"^(yes|permissive|destination|customers|public)$"]({bbox});
+	way["highway"="corridor"]({bbox});
+	way["indoor"="corridor"]({bbox});
+)
+""".strip(),
+		"amenities": """
+(
+	node["amenity"~"^(school|university|college|kindergarten)$"]({bbox});
+	node["amenity"~"^(hospital|clinic|doctors|pharmacy)$"]({bbox});
+	node["amenity"~"^(cafe|restaurant|bar|fast_food|pub)$"]({bbox});
+	node["shop"]({bbox});
+	node["tourism"~"^(museum|gallery|attraction)$"]({bbox});
+	node["leisure"~"^(park|playground|pitch|sports_centre)$"]({bbox});
+)
+""".strip(),
+}
 
 # Buffers and geometry params (meters)
 SIDEWALK_OFFSET_M = 1.5        # distance to offset centerline to create sidewalk lines
@@ -18,7 +52,7 @@ PROXIMITY_BUFFER_M = 50.0      # buffer around major roads to check for pedestri
 SNAP_ROUND_DECIMALS = 3  # 0.001 m precision (millimeter) — deterministic
 
 # Spatial tiling / temp
-WORK_CRS_EPSG = 3857  # meters
+WORK_CRS_EPSG = 32632  # UTM Zone 32N for Bologna (better metric accuracy than 3857)
 
 # Exports
 OUT_DIR = Path("output")
