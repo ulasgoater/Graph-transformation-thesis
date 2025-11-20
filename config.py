@@ -51,8 +51,9 @@ PROXIMITY_BUFFER_M = 50.0      # buffer around major roads to check for pedestri
 # Deterministic snapping precision: round coordinates to this many decimals (in meters)
 SNAP_ROUND_DECIMALS = 3  # 0.001 m precision (millimeter) — deterministic
 
-# Spatial tiling / temp
-WORK_CRS_EPSG = 32632  # UTM Zone 32N for Bologna (better metric accuracy than 3857)
+# Spatial CRS - dynamically calculated from input bbox (see utils.get_utm_epsg_from_bbox)
+# Default for Milano: UTM Zone 32N (EPSG:32632)
+DEFAULT_WORK_CRS_EPSG = 32632
 
 # Exports
 OUT_DIR = Path("output")

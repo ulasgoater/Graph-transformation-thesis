@@ -9,8 +9,8 @@ import geopandas as gpd
 import overpass
 from shapely.geometry import shape
 
-from config import MILANO_BBOX, OVERPASS_QUERIES, WORK_CRS_EPSG
-from utils import ensure_meters
+from config import MILANO_BBOX, OVERPASS_QUERIES
+from utils import ensure_meters, get_utm_epsg_from_bbox
 
 
 class OSMDataFetcher:
@@ -32,6 +32,9 @@ class OSMDataFetcher:
 
         bbox = list(bbox or MILANO_BBOX)
         query = OVERPASS_QUERIES[query_key].format(bbox=self._format_bbox(bbox))
+        
+        # Calculate appropriate UTM zone for this bbox
+        target_epsg = get_utm_epsg_from_bbox(bbox)
 
         response = None
         for attempt in range(1, self.max_retries + 1):
@@ -57,7 +60,7 @@ class OSMDataFetcher:
             gdf["geometry"] = [shape(feat["geometry"]) for feat in features]
             gdf.set_geometry("geometry", inplace=True)
 
-        return ensure_meters(gdf)
+        return ensure_meters(gdf, target_epsg=target_epsg)
 
 
 def fetch_autograph_data(bbox: Optional[Iterable[float]] = None) -> gpd.GeoDataFrame:
