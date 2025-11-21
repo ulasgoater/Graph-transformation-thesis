@@ -31,11 +31,14 @@ def test_determinism(num_runs=3):
     print(f"Testing determinism with {num_runs} runs...")
     print("=" * 60)
     
+    # Use fixed test bbox (Milano)
+    test_bbox = [45.386, 9.040, 45.535, 9.278]
+    
     all_hashes = []
     for i in range(num_runs):
         print(f"\nRun {i+1}/{num_runs}...")
         try:
-            main(run_test_subset=True)
+            main(run_test_subset=True, bbox=test_bbox, prompt_bbox=False)
             hashes = hash_outputs()
             all_hashes.append(hashes)
             print(f"  Nodes hash:   {hashes.get('nodes', 'N/A')}")

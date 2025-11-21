@@ -45,21 +45,21 @@ def get_bbox_from_user():
             exit(0)
 
 
-def main(run_test_subset=True, bbox=None, prompt_bbox=False):
+def main(run_test_subset=True, bbox=None, prompt_bbox=True):
     """Run the pedestrian graph pipeline using Overpass API.
     
     Args:
         run_test_subset: If True, extract only a 1km x 1km test area
-        bbox: Custom bounding box [south, west, north, east], uses Milano default if None
-        prompt_bbox: If True, interactively prompt user for coordinates
+        bbox: Custom bounding box [south, west, north, east], required if prompt_bbox=False
+        prompt_bbox: If True (default), interactively prompt user for coordinates
     """
     if prompt_bbox:
         bbox = get_bbox_from_user()
     
-    if bbox:
-        print(f"Fetching data from Overpass API for bbox: {bbox} …")
-    else:
-        print("Fetching data from Overpass API (default Milano bbox) …")
+    if not bbox:
+        raise ValueError("bbox must be provided either via parameter or prompt")
+    
+    print(f"Fetching data from Overpass API for bbox: {bbox} …")
     
     gdf_auto = fetch_autograph_data(bbox)
     gdf_cross = fetch_crossings_data(bbox)

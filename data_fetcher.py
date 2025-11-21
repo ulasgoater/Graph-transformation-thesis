@@ -9,7 +9,7 @@ import geopandas as gpd
 import overpass
 from shapely.geometry import shape
 
-from config import MILANO_BBOX, OVERPASS_QUERIES
+from config import OVERPASS_QUERIES
 from utils import ensure_meters, get_utm_epsg_from_bbox
 
 
@@ -26,11 +26,14 @@ class OSMDataFetcher:
         south, west, north, east = bbox
         return f"{south},{west},{north},{east}"
 
-    def fetch(self, query_key: str, bbox: Optional[Iterable[float]] = None) -> gpd.GeoDataFrame:
+    def fetch(self, query_key: str, bbox: Iterable[float]) -> gpd.GeoDataFrame:
         if query_key not in OVERPASS_QUERIES:
             raise KeyError(f"Unknown OVERPASS query key: {query_key}")
-
-        bbox = list(bbox or MILANO_BBOX)
+        
+        if not bbox:
+            raise ValueError("bbox parameter is required")
+        
+        bbox = list(bbox)
         query = OVERPASS_QUERIES[query_key].format(bbox=self._format_bbox(bbox))
         
         # Calculate appropriate UTM zone for this bbox
@@ -63,11 +66,11 @@ class OSMDataFetcher:
         return ensure_meters(gdf, target_epsg=target_epsg)
 
 
-def fetch_autograph_data(bbox: Optional[Iterable[float]] = None) -> gpd.GeoDataFrame:
+def fetch_autograph_data(bbox: Iterable[float]) -> gpd.GeoDataFrame:
     return OSMDataFetcher().fetch("autograph", bbox)
 
 
-def fetch_crossings_data(bbox: Optional[Iterable[float]] = None) -> gpd.GeoDataFrame:
+def fetch_crossings_data(bbox: Iterable[float]) -> gpd.GeoDataFrame:
     gdf = OSMDataFetcher().fetch("crossings", bbox)
     if gdf.empty:
         return gdf
@@ -77,9 +80,9 @@ def fetch_crossings_data(bbox: Optional[Iterable[float]] = None) -> gpd.GeoDataF
     return gdf
 
 
-def fetch_pedestrian_data(bbox: Optional[Iterable[float]] = None) -> gpd.GeoDataFrame:
+def fetch_pedestrian_data(bbox: Iterable[float]) -> gpd.GeoDataFrame:
     return OSMDataFetcher().fetch("pedestrian", bbox)
 
 
-def fetch_amenities_data(bbox: Optional[Iterable[float]] = None) -> gpd.GeoDataFrame:
+def fetch_amenities_data(bbox: Iterable[float]) -> gpd.GeoDataFrame:
     return OSMDataFetcher().fetch("amenities", bbox)

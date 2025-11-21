@@ -1,9 +1,7 @@
 # config.py
 from pathlib import Path
 
-# OVERPASS API configuration (Milano bounding box: south, west, north, east)
-MILANO_BBOX = [45.386, 9.040, 45.535, 9.278]
-
+# OVERPASS API configuration
 OVERPASS_QUERIES = {
 		"autograph": """
 (
