@@ -31,8 +31,8 @@ def test_determinism(num_runs=3):
     print(f"Testing determinism with {num_runs} runs...")
     print("=" * 60)
     
-    # Use fixed test bbox (Milano)
-    test_bbox = [45.386, 9.040, 45.535, 9.278]
+    # Use fixed test bbox (Bologna)
+    test_bbox = [44.4768, 11.3016, 44.5168, 11.3616]
     
     all_hashes = []
     for i in range(num_runs):
